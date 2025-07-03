@@ -3008,7 +3008,7 @@ void _glfwGetWindowPosWayland(_GLFWwindow* window, int* xpos, int* ypos)
     // A Wayland client is not aware of its position, so just warn and leave it
     // as (0, 0)
 
-    _glfwInputError(GLFW_FEATURE_UNAVAILABLE,
+    fprintf(stderr,
                     "Wayland: The platform does not provide the window position");
 }
 
@@ -3016,7 +3016,7 @@ void _glfwSetWindowPosWayland(_GLFWwindow* window, int xpos, int ypos)
 {
     // A Wayland client can not set its position, so just warn
 
-    _glfwInputError(GLFW_FEATURE_UNAVAILABLE,
+    fprintf(stderr,
                     "Wayland: The platform does not support setting the window position");
 }
 
