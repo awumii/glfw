@@ -97,6 +97,15 @@ GLFWbool _glfwSelectPlatform(int desiredID, _GLFWplatform* platform)
                 desiredID = GLFW_PLATFORM_X11;
         }
     }
+    // Opt-in override: GLFW_FORCE_WAYLAND=1 forces Wayland even when the app
+    // explicitly requested X11. Useful for apps like Minecraft 26.1+ that hard-
+    // code GLFW_PLATFORM_X11 but actually run fine on Wayland.
+    if (desiredID == GLFW_PLATFORM_X11)
+    {
+        const char* const force = getenv("GLFW_FORCE_WAYLAND");
+        if (force && strcmp(force, "1") == 0 && getenv("WAYLAND_DISPLAY"))
+            desiredID = GLFW_PLATFORM_WAYLAND;
+    }
 #endif
 
     if (desiredID == GLFW_ANY_PLATFORM)
