@@ -52,6 +52,8 @@
 #include "fractional-scale-v1-client-protocol.h"
 #include "xdg-activation-v1-client-protocol.h"
 #include "idle-inhibit-unstable-v1-client-protocol.h"
+#include "tablet-unstable-v2-client-protocol.h"
+#include "cursor-shape-v1-client-protocol.h"
 #include "pointer-warp-v1-client-protocol.h"
 #include "text-input-unstable-v1-client-protocol.h"
 #include "text-input-unstable-v3-client-protocol.h"
@@ -96,6 +98,14 @@
 
 #define types _glfw_idle_inhibit_types
 #include "idle-inhibit-unstable-v1-client-protocol-code.h"
+#undef types
+
+#define types _glfw_tablet_types
+#include "tablet-unstable-v2-client-protocol-code.h"
+#undef types
+
+#define types _glfw_cursor_shape_types
+#include "cursor-shape-v1-client-protocol-code.h"
 #undef types
 
 #define types _glfw_pointer_warp_types
@@ -221,6 +231,13 @@ static void registryHandleGlobal(void* userData,
         _glfw.wl.fractionalScaleManager =
             wl_registry_bind(registry, name,
                              &wp_fractional_scale_manager_v1_interface,
+                             1);
+    }
+    else if (strcmp(interface, wp_cursor_shape_manager_v1_interface.name) == 0)
+    {
+        _glfw.wl.cursorShapeManager =
+            wl_registry_bind(registry, name,
+                             &wp_cursor_shape_manager_v1_interface,
                              1);
     }
     else if (strcmp(interface, "wp_pointer_warp_v1") == 0)
@@ -1042,6 +1059,10 @@ void _glfwTerminateWayland(void)
         xdg_activation_v1_destroy(_glfw.wl.activationManager);
     if (_glfw.wl.fractionalScaleManager)
         wp_fractional_scale_manager_v1_destroy(_glfw.wl.fractionalScaleManager);
+    if (_glfw.wl.cursorShapeManager)
+        wp_cursor_shape_manager_v1_destroy(_glfw.wl.cursorShapeManager);
+    if (_glfw.wl.cursorShapeDevice)
+        wp_cursor_shape_device_v1_destroy(_glfw.wl.cursorShapeDevice);
     if (_glfw.wl.textInputManagerV1)
         zwp_text_input_manager_v1_destroy(_glfw.wl.textInputManagerV1);
     if (_glfw.wl.textInputManagerV3)

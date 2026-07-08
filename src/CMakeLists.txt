@@ -110,6 +110,8 @@ if (GLFW_BUILD_WAYLAND)
         generate_wayland_protocol("text-input-unstable-v1.xml")
         generate_wayland_protocol("text-input-unstable-v3.xml")
         generate_wayland_protocol("xdg-toplevel-icon-v1.xml")
+        generate_wayland_protocol("tablet-unstable-v2.xml")
+        generate_wayland_protocol("cursor-shape-v1.xml")
     #endif()
 endif()
 

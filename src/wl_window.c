@@ -55,6 +55,7 @@
 #include "xdg-activation-v1-client-protocol.h"
 #include "idle-inhibit-unstable-v1-client-protocol.h"
 #include "fractional-scale-v1-client-protocol.h"
+#include "cursor-shape-v1-client-protocol.h"
 #include "pointer-warp-v1-client-protocol.h"
 #include "text-input-unstable-v1-client-protocol.h"
 #include "text-input-unstable-v3-client-protocol.h"
@@ -1267,9 +1268,67 @@ static GLFWbool createNativeSurface(_GLFWwindow* window,
     return GLFW_TRUE;
 }
 
+GLFWbool setCursorShape(int shape) {
+    int xdgShape = -1;
+
+    switch (shape)
+    {
+        case GLFW_ARROW_CURSOR:
+            xdgShape = WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT;
+            break;
+        case GLFW_IBEAM_CURSOR:
+            xdgShape = WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_TEXT;
+            break;
+        case GLFW_CROSSHAIR_CURSOR:
+            xdgShape = WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_CROSSHAIR;
+            break;
+        case GLFW_POINTING_HAND_CURSOR:
+            xdgShape = WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER;
+            break;
+        case GLFW_RESIZE_EW_CURSOR:
+            xdgShape = WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_EW_RESIZE;
+            break;
+        case GLFW_RESIZE_NS_CURSOR:
+            xdgShape = WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NS_RESIZE;
+            break;
+        case GLFW_RESIZE_NWSE_CURSOR:
+            xdgShape = WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NWSE_RESIZE;
+            break;
+        case GLFW_RESIZE_NESW_CURSOR:
+            xdgShape = WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NESW_RESIZE;
+            break;
+        case GLFW_RESIZE_ALL_CURSOR:
+            xdgShape = WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_ALL_SCROLL;
+            break;
+        case GLFW_NOT_ALLOWED_CURSOR:
+            xdgShape = WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NOT_ALLOWED;
+            break;
+    }
+
+    if (xdgShape == -1)
+    {
+        return GLFW_FALSE;
+    }
+
+    wp_cursor_shape_device_v1_set_shape(_glfw.wl.cursorShapeDevice,
+        _glfw.wl.pointerEnterSerial, 
+        xdgShape);
+
+    return GLFW_TRUE;
+}
+
 static void setCursorImage(_GLFWwindow* window,
                            _GLFWcursorWayland* cursorWayland)
 {
+    if (_glfw.wl.cursorShapeDevice && cursorWayland->shape != 0)
+    {
+        GLFWbool ok = setCursorShape(cursorWayland->shape);
+        if (ok == GLFW_TRUE)
+        {
+            return;
+        }
+    }
+
     struct itimerspec timer = {0};
     struct wl_cursor* wlCursor = cursorWayland->cursor;
     struct wl_cursor_image* image;
@@ -2107,6 +2166,10 @@ static void seatHandleCapabilities(void* userData,
     {
         _glfw.wl.pointer = wl_seat_get_pointer(seat);
         wl_pointer_add_listener(_glfw.wl.pointer, &pointerListener, NULL);
+        if (_glfw.wl.cursorShapeManager) 
+        {
+            _glfw.wl.cursorShapeDevice = wp_cursor_shape_manager_v1_get_pointer(_glfw.wl.cursorShapeManager, _glfw.wl.pointer);
+        }
     }
     else if (!(caps & WL_SEAT_CAPABILITY_POINTER) && _glfw.wl.pointer)
     {
@@ -3539,6 +3602,8 @@ GLFWbool _glfwCreateCursorWayland(_GLFWcursor* cursor,
 
 GLFWbool _glfwCreateStandardCursorWayland(_GLFWcursor* cursor, int shape)
 {
+    cursor->wl.shape = shape;
+
     const char* name = NULL;
 
     // Try the XDG names first
@@ -3848,7 +3913,8 @@ void _glfwSetCursorWayland(_GLFWwindow* window, _GLFWcursor* cursor)
                 NULL,
                 0, 0,
                 0, 0,
-                0
+                0,
+                GLFW_ARROW_CURSOR
             };
 
             setCursorImage(window, &cursorWayland);
